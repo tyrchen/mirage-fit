@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mirage Fit - AI-Powered Fashion Remix</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+        .header h1 {
+            font-size: 3.5em;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        .header .subtitle {
+            font-size: 1.3em;
+            opacity: 0.9;
+            margin-bottom: 30px;
+        }
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin: 20px 0;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin: 40px 0;
+        }
+        .feature {
+            text-align: center;
+            padding: 20px;
+        }
+        .feature-icon {
+            font-size: 3em;
+            margin-bottom: 20px;
+        }
+        .feature h3 {
+            color: #5a6c7d;
+            margin-bottom: 15px;
+        }
+        .cta-section {
+            text-align: center;
+            margin: 50px 0;
+        }
+        .btn {
+            display: inline-block;
+            padding: 15px 30px;
+            margin: 10px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+        .status {
+            background: #f8f9fa;
+            border-left: 4px solid #28a745;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .categories {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            margin: 20px 0;
+        }
+        .category-tag {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 500;
+        }
+        .tech-stack {
+            background: #2c3e50;
+            color: #ecf0f1;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .tech-stack h3 {
+            color: #3498db;
+            margin-bottom: 15px;
+        }
+        .tech-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+        }
+        .footer {
+            text-align: center;
+            color: white;
+            margin-top: 50px;
+            opacity: 0.8;
+        }
+        @media (max-width: 768px) {
+            .header h1 { font-size: 2.5em; }
+            .container { padding: 20px 10px; }
+            .card { padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎨 Mirage Fit</h1>
+            <div class="subtitle">AI-Powered Fashion Remix Application</div>
+            <p>Transform your style with cutting-edge AI technology powered by Google Gemini</p>
+        </div>
+
+        <div class="card">
+            <div class="status">
+                <h3>🟢 Service Status</h3>
+                <p><strong>Server:</strong> Running ✅</p>
+                <p><strong>API:</strong> Available at <code>/api</code></p>
+                <p><strong>Documentation:</strong> Available at <code>/docs</code></p>
+                <p><strong>Version:</strong> 0.1.0</p>
+            </div>
+        </div>
+
+        <div class="features">
+            <div class="card feature">
+                <div class="feature-icon">🤖</div>
+                <h3>AI-Powered Generation</h3>
+                <p>Use Google Gemini's advanced AI to generate realistic fashion items and seamless remixes of your photos with various clothing and accessories.</p>
+            </div>
+
+            <div class="card feature">
+                <div class="feature-icon">👗</div>
+                <h3>Fashion Categories</h3>
+                <p>Support for 11 different fashion categories including hats, glasses, shoes, tops, bottoms, accessories, and more.</p>
+            </div>
+
+            <div class="card feature">
+                <div class="feature-icon">🔄</div>
+                <h3>Smart Remix</h3>
+                <p>Intelligently combine your photos with generated items to create natural-looking fashion transformations.</p>
+            </div>
+
+            <div class="card feature">
+                <div class="feature-icon">⚡</div>
+                <h3>High Performance</h3>
+                <p>Built with Rust and Axum for blazing-fast performance and reliability. Blake3 hashing ensures efficient caching.</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>📂 Supported Categories</h2>
+            <div class="categories">
+                <span class="category-tag">帽子 Hat</span>
+                <span class="category-tag">眼镜 Glasses</span>
+                <span class="category-tag">鞋子 Shoes</span>
+                <span class="category-tag">上衣 Top</span>
+                <span class="category-tag">裤子/裙子 Bottom</span>
+                <span class="category-tag">袜子 Socks</span>
+                <span class="category-tag">手套 Gloves</span>
+                <span class="category-tag">围巾 Scarf</span>
+                <span class="category-tag">包包 Bag</span>
+                <span class="category-tag">饰品 Accessory</span>
+                <span class="category-tag">其他 Other</span>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>🚀 How It Works</h2>
+            <ol style="padding-left: 20px; line-height: 2;">
+                <li><strong>Upload</strong> your photo via the <code>/api/upload</code> endpoint</li>
+                <li><strong>Generate</strong> fashion items using AI via <code>/api/items/:category</code></li>
+                <li><strong>Remix</strong> your photo with selected items via <code>/api/remix</code></li>
+                <li><strong>Download</strong> your transformed image from <code>/api/outputs</code></li>
+            </ol>
+        </div>
+
+        <div class="tech-stack">
+            <h3>🛠️ Technology Stack</h3>
+            <div class="tech-list">
+                <div>• <strong>Rust</strong> - Systems programming language</div>
+                <div>• <strong>Axum 0.8</strong> - Modern web framework</div>
+                <div>• <strong>Reqwest 0.12</strong> - HTTP client</div>
+                <div>• <strong>Google Gemini AI</strong> - Image generation</div>
+                <div>• <strong>Blake3</strong> - Cryptographic hashing</div>
+                <div>• <strong>Tokio</strong> - Async runtime</div>
+                <div>• <strong>Serde</strong> - Serialization framework</div>
+                <div>• <strong>Rust-Embed</strong> - Static file serving</div>
+            </div>
+        </div>
+
+        <div class="cta-section">
+            <h2 style="color: white; margin-bottom: 30px;">Ready to Transform Your Style?</h2>
+            <a href="/docs" class="btn">📚 View API Documentation</a>
+            <a href="/api/health" class="btn">🏥 Check API Health</a>
+            <a href="/api/categories" class="btn">🗂️ Browse Categories</a>
+        </div>
+
+        <div class="card">
+            <h2>⚙️ Configuration</h2>
+            <p>Configure the application using these environment variables:</p>
+            <ul style="margin: 15px 0; padding-left: 20px;">
+                <li><code>GEMINI_API_KEY</code> - Your Google Gemini API key (required)</li>
+                <li><code>MIRAGE_FIT_PORT</code> - Server port (default: 3000)</li>
+                <li><code>MIRAGE_FIT_HOST</code> - Server host (default: 127.0.0.1)</li>
+                <li><code>RUST_LOG</code> - Log level (default: info)</li>
+            </ul>
+        </div>
+
+        <div class="footer">
+            <p>Mirage Fit v0.1.0 - Built with ❤️ using Rust and AI</p>
+            <p>Powered by Google Gemini AI Technology</p>
+        </div>
+    </div>
+</body>
+</html>
