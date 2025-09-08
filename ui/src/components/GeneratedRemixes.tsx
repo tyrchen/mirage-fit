@@ -137,7 +137,7 @@ const GeneratedRemixes: React.FC = () => {
                         Created {new Date(output.created_at).toLocaleString()}
                       </p>
                       <p className="text-xs text-gray-400 mt-2">
-                        {output.dimensions.width} × {output.dimensions.height}
+                        {output.dimensions[0]} × {output.dimensions[1]}
                       </p>
                     </div>
 

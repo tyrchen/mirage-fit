@@ -43,6 +43,11 @@ const SelectedItemsSection: React.FC = () => {
       [ItemCategory.Accessory]: 'accessory',
       [ItemCategory.BottomSkirt]: 'bottom',
       [ItemCategory.Shoes]: 'shoes',
+      [ItemCategory.Socks]: 'socks',
+      [ItemCategory.Gloves]: 'gloves',
+      [ItemCategory.Scarf]: 'scarf',
+      [ItemCategory.Bag]: 'bag',
+      [ItemCategory.Other]: 'other',
     };
     return labels[category] || category;
   };

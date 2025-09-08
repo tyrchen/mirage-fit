@@ -1,11 +1,20 @@
-build:
+build: build-ui
 	@cargo build
+
+build-ui:
+	@cd ui && yarn build
+
+run:
+	@cargo run -- --generate-defaults
 
 run-ui:
 	@cd ui && yarn dev
 
-test:
+test: test-ui
 	@cargo nextest run --all-features
+
+test-ui:
+	@cd ui && yarn test
 
 release:
 	@cargo release tag --execute

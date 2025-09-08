@@ -15,7 +15,7 @@ const sizeClasses = {
 
 const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
   size = 'md',
-  className
+  className,
 }) => {
   return (
     <motion.div

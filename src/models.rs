@@ -219,7 +219,7 @@ pub struct UploadRequest {
 }
 
 /// Response after uploading a photo
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct UploadResponse {
     pub id: Uuid,
     pub hash: String,
@@ -358,6 +358,7 @@ pub struct GeminiCandidate {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serde_json::json;
 
     #[test]
     fn test_item_category_all() {
@@ -365,52 +366,519 @@ mod tests {
         assert_eq!(categories.len(), 11);
         assert!(categories.contains(&ItemCategory::Hat));
         assert!(categories.contains(&ItemCategory::Other));
+
+        // Test that all expected categories are present
+        let expected_categories = [
+            ItemCategory::Hat,
+            ItemCategory::Glasses,
+            ItemCategory::Shoes,
+            ItemCategory::Top,
+            ItemCategory::BottomSkirt,
+            ItemCategory::Socks,
+            ItemCategory::Gloves,
+            ItemCategory::Scarf,
+            ItemCategory::Bag,
+            ItemCategory::Accessory,
+            ItemCategory::Other,
+        ];
+
+        for expected in &expected_categories {
+            assert!(
+                categories.contains(expected),
+                "Missing category: {:?}",
+                expected
+            );
+        }
     }
 
     #[test]
     fn test_item_category_display_name() {
         assert_eq!(ItemCategory::Hat.display_name(), "Hat");
+        assert_eq!(ItemCategory::Glasses.display_name(), "Glasses");
+        assert_eq!(ItemCategory::Shoes.display_name(), "Shoes");
+        assert_eq!(ItemCategory::Top.display_name(), "Top");
         assert_eq!(ItemCategory::BottomSkirt.display_name(), "Bottom/Skirt");
+        assert_eq!(ItemCategory::Socks.display_name(), "Socks");
+        assert_eq!(ItemCategory::Gloves.display_name(), "Gloves");
+        assert_eq!(ItemCategory::Scarf.display_name(), "Scarf");
+        assert_eq!(ItemCategory::Bag.display_name(), "Bag");
+        assert_eq!(ItemCategory::Accessory.display_name(), "Accessory");
         assert_eq!(ItemCategory::Other.display_name(), "Other");
     }
 
     #[test]
     fn test_item_category_dir_name() {
         assert_eq!(ItemCategory::Hat.dir_name(), "hats");
+        assert_eq!(ItemCategory::Glasses.dir_name(), "glasses");
+        assert_eq!(ItemCategory::Shoes.dir_name(), "shoes");
+        assert_eq!(ItemCategory::Top.dir_name(), "tops");
         assert_eq!(ItemCategory::BottomSkirt.dir_name(), "bottoms");
+        assert_eq!(ItemCategory::Socks.dir_name(), "socks");
+        assert_eq!(ItemCategory::Gloves.dir_name(), "gloves");
+        assert_eq!(ItemCategory::Scarf.dir_name(), "scarves");
+        assert_eq!(ItemCategory::Bag.dir_name(), "bags");
+        assert_eq!(ItemCategory::Accessory.dir_name(), "accessories");
         assert_eq!(ItemCategory::Other.dir_name(), "other");
     }
 
     #[test]
-    fn test_item_category_from_str() {
-        // Test English names
+    fn test_item_category_parse_comprehensive() {
+        // Test English names (primary)
+        assert_eq!(ItemCategory::parse("hat"), Some(ItemCategory::Hat));
         assert_eq!(ItemCategory::parse("Hat"), Some(ItemCategory::Hat));
         assert_eq!(ItemCategory::parse("hats"), Some(ItemCategory::Hat));
+
+        assert_eq!(ItemCategory::parse("glasses"), Some(ItemCategory::Glasses));
+        assert_eq!(ItemCategory::parse("Glasses"), Some(ItemCategory::Glasses));
+
+        assert_eq!(ItemCategory::parse("shoes"), Some(ItemCategory::Shoes));
+        assert_eq!(ItemCategory::parse("Shoes"), Some(ItemCategory::Shoes));
+
+        assert_eq!(ItemCategory::parse("top"), Some(ItemCategory::Top));
+        assert_eq!(ItemCategory::parse("Top"), Some(ItemCategory::Top));
+        assert_eq!(ItemCategory::parse("tops"), Some(ItemCategory::Top));
+
         assert_eq!(
-            ItemCategory::parse("Bottom/Skirt"),
+            ItemCategory::parse("bottom"),
+            Some(ItemCategory::BottomSkirt)
+        );
+        assert_eq!(
+            ItemCategory::parse("Bottom"),
             Some(ItemCategory::BottomSkirt)
         );
         assert_eq!(
             ItemCategory::parse("bottoms"),
             Some(ItemCategory::BottomSkirt)
         );
+        assert_eq!(
+            ItemCategory::parse("Bottom/Skirt"),
+            Some(ItemCategory::BottomSkirt)
+        );
+
+        assert_eq!(ItemCategory::parse("socks"), Some(ItemCategory::Socks));
+        assert_eq!(ItemCategory::parse("Socks"), Some(ItemCategory::Socks));
+
+        assert_eq!(ItemCategory::parse("gloves"), Some(ItemCategory::Gloves));
+        assert_eq!(ItemCategory::parse("Gloves"), Some(ItemCategory::Gloves));
+
+        assert_eq!(ItemCategory::parse("scarf"), Some(ItemCategory::Scarf));
+        assert_eq!(ItemCategory::parse("Scarf"), Some(ItemCategory::Scarf));
+        assert_eq!(ItemCategory::parse("scarves"), Some(ItemCategory::Scarf));
+
+        assert_eq!(ItemCategory::parse("bag"), Some(ItemCategory::Bag));
+        assert_eq!(ItemCategory::parse("Bag"), Some(ItemCategory::Bag));
+        assert_eq!(ItemCategory::parse("bags"), Some(ItemCategory::Bag));
+
+        assert_eq!(
+            ItemCategory::parse("accessory"),
+            Some(ItemCategory::Accessory)
+        );
+        assert_eq!(
+            ItemCategory::parse("Accessory"),
+            Some(ItemCategory::Accessory)
+        );
+        assert_eq!(
+            ItemCategory::parse("accessories"),
+            Some(ItemCategory::Accessory)
+        );
+
+        assert_eq!(ItemCategory::parse("other"), Some(ItemCategory::Other));
+        assert_eq!(ItemCategory::parse("Other"), Some(ItemCategory::Other));
+
         // Test Chinese backward compatibility
         assert_eq!(ItemCategory::parse("帽子"), Some(ItemCategory::Hat));
+        assert_eq!(ItemCategory::parse("眼镜"), Some(ItemCategory::Glasses));
+        assert_eq!(ItemCategory::parse("鞋子"), Some(ItemCategory::Shoes));
+        assert_eq!(ItemCategory::parse("上衣"), Some(ItemCategory::Top));
         assert_eq!(
             ItemCategory::parse("裤子/裙子"),
             Some(ItemCategory::BottomSkirt)
         );
-        // Test invalid
+        assert_eq!(
+            ItemCategory::parse("裤子_裙子"),
+            Some(ItemCategory::BottomSkirt)
+        );
+        assert_eq!(ItemCategory::parse("袜子"), Some(ItemCategory::Socks));
+        assert_eq!(ItemCategory::parse("手套"), Some(ItemCategory::Gloves));
+        assert_eq!(ItemCategory::parse("围巾"), Some(ItemCategory::Scarf));
+        assert_eq!(ItemCategory::parse("包包"), Some(ItemCategory::Bag));
+        assert_eq!(ItemCategory::parse("饰品"), Some(ItemCategory::Accessory));
+        assert_eq!(ItemCategory::parse("其他"), Some(ItemCategory::Other));
+
+        // Test invalid inputs
         assert_eq!(ItemCategory::parse("invalid"), None);
+        assert_eq!(ItemCategory::parse(""), None);
+        assert_eq!(ItemCategory::parse("hat123"), None);
+        assert_eq!(ItemCategory::parse("INVALID"), None);
     }
 
     #[test]
-    fn test_serialization() {
+    fn test_item_category_display() {
         let category = ItemCategory::Hat;
-        let json = serde_json::to_string(&category).unwrap();
-        assert_eq!(json, r#""hat""#);
+        assert_eq!(format!("{}", category), "Hat");
 
-        let deserialized: ItemCategory = serde_json::from_str(&json).unwrap();
-        assert_eq!(deserialized, category);
+        let category = ItemCategory::BottomSkirt;
+        assert_eq!(format!("{}", category), "Bottom/Skirt");
+    }
+
+    #[test]
+    fn test_serialization_all_categories() {
+        // Test serialization for all categories
+        let test_cases = [
+            (ItemCategory::Hat, "hat"),
+            (ItemCategory::Glasses, "glasses"),
+            (ItemCategory::Shoes, "shoes"),
+            (ItemCategory::Top, "top"),
+            (ItemCategory::BottomSkirt, "bottom"),
+            (ItemCategory::Socks, "socks"),
+            (ItemCategory::Gloves, "gloves"),
+            (ItemCategory::Scarf, "scarf"),
+            (ItemCategory::Bag, "bag"),
+            (ItemCategory::Accessory, "accessory"),
+            (ItemCategory::Other, "other"),
+        ];
+
+        for (category, expected_json) in test_cases.iter() {
+            let json = serde_json::to_string(category).unwrap();
+            assert_eq!(json, format!(r#""{}""#, expected_json));
+
+            let deserialized: ItemCategory = serde_json::from_str(&json).unwrap();
+            assert_eq!(deserialized, *category);
+        }
+    }
+
+    #[test]
+    fn test_image_metadata_creation() {
+        let metadata = ImageMetadata {
+            id: Uuid::new_v4(),
+            filename: Some("test.jpg".to_string()),
+            hash: "abc123".to_string(),
+            size: 1024,
+            dimensions: (800, 600),
+            mime_type: "image/jpeg".to_string(),
+            created_at: "2023-01-01T00:00:00Z".to_string(),
+            category: Some(ItemCategory::Hat),
+            prompt: Some("A red hat".to_string()),
+            source_images: vec!["source1".to_string(), "source2".to_string()],
+        };
+
+        assert!(metadata.filename.is_some());
+        assert_eq!(metadata.hash, "abc123");
+        assert_eq!(metadata.size, 1024);
+        assert_eq!(metadata.dimensions, (800, 600));
+        assert_eq!(metadata.mime_type, "image/jpeg");
+        assert_eq!(metadata.category, Some(ItemCategory::Hat));
+        assert_eq!(metadata.prompt, Some("A red hat".to_string()));
+        assert_eq!(metadata.source_images.len(), 2);
+    }
+
+    #[test]
+    fn test_image_metadata_serialization() {
+        let metadata = ImageMetadata {
+            id: Uuid::new_v4(),
+            filename: Some("test.jpg".to_string()),
+            hash: "abc123".to_string(),
+            size: 1024,
+            dimensions: (800, 600),
+            mime_type: "image/jpeg".to_string(),
+            created_at: "2023-01-01T00:00:00Z".to_string(),
+            category: Some(ItemCategory::Hat),
+            prompt: Some("A red hat".to_string()),
+            source_images: vec!["source1".to_string()],
+        };
+
+        let json = serde_json::to_string(&metadata).unwrap();
+        let deserialized: ImageMetadata = serde_json::from_str(&json).unwrap();
+
+        assert_eq!(deserialized.filename, metadata.filename);
+        assert_eq!(deserialized.hash, metadata.hash);
+        assert_eq!(deserialized.size, metadata.size);
+        assert_eq!(deserialized.dimensions, metadata.dimensions);
+        assert_eq!(deserialized.mime_type, metadata.mime_type);
+        assert_eq!(deserialized.category, metadata.category);
+        assert_eq!(deserialized.prompt, metadata.prompt);
+        assert_eq!(deserialized.source_images, metadata.source_images);
+    }
+
+    #[test]
+    fn test_api_response_serialization() {
+        // Test CategoriesResponse
+        let categories_response = CategoriesResponse {
+            categories: vec![
+                CategoryInfo {
+                    id: ItemCategory::Hat,
+                    name: "Hat".to_string(),
+                    count: 5,
+                },
+                CategoryInfo {
+                    id: ItemCategory::Shoes,
+                    name: "Shoes".to_string(),
+                    count: 3,
+                },
+            ],
+        };
+
+        let json = serde_json::to_string(&categories_response).unwrap();
+        let deserialized: CategoriesResponse = serde_json::from_str(&json).unwrap();
+        assert_eq!(deserialized.categories.len(), 2);
+        assert_eq!(deserialized.categories[0].id, ItemCategory::Hat);
+        assert_eq!(deserialized.categories[0].count, 5);
+    }
+
+    #[test]
+    fn test_request_deserialization() {
+        // Test GenerateItemRequest
+        let json = json!({
+            "prompt": "vintage style hat",
+            "style": "retro",
+            "color": "brown"
+        });
+
+        let request: GenerateItemRequest = serde_json::from_value(json).unwrap();
+        assert_eq!(request.prompt, Some("vintage style hat".to_string()));
+        assert_eq!(request.style, Some("retro".to_string()));
+        assert_eq!(request.color, Some("brown".to_string()));
+
+        // Test with missing optional fields
+        let json = json!({});
+        let request: GenerateItemRequest = serde_json::from_value(json).unwrap();
+        assert_eq!(request.prompt, None);
+        assert_eq!(request.style, None);
+        assert_eq!(request.color, None);
+    }
+
+    #[test]
+    fn test_remix_request_deserialization() {
+        let json = json!({
+            "base_image": "abc123",
+            "items": [
+                ["hat", "def456"],
+                ["shoes", "ghi789"]
+            ],
+            "style": "casual outdoor",
+            "quality": 8
+        });
+
+        let request: RemixRequest = serde_json::from_value(json).unwrap();
+        assert_eq!(request.base_image, "abc123");
+        assert_eq!(request.items.len(), 2);
+        assert_eq!(request.items[0].0, ItemCategory::Hat);
+        assert_eq!(request.items[0].1, "def456");
+        assert_eq!(request.items[1].0, ItemCategory::Shoes);
+        assert_eq!(request.items[1].1, "ghi789");
+        assert_eq!(request.style, Some("casual outdoor".to_string()));
+        assert_eq!(request.quality, Some(8));
+    }
+
+    #[test]
+    fn test_upload_response_serialization() {
+        let response = UploadResponse {
+            id: Uuid::new_v4(),
+            hash: "abc123".to_string(),
+            filename: Some("photo.jpg".to_string()),
+            dimensions: (1920, 1080),
+            size: 2048000,
+            url: "http://localhost:3000/api/images/input/abc123.jpg".to_string(),
+            message: "Photo uploaded successfully".to_string(),
+        };
+
+        let json = serde_json::to_string(&response).unwrap();
+        // Test that JSON contains expected values
+        assert!(json.contains("abc123"));
+        assert!(json.contains("1920"));
+        assert!(json.contains("1080"));
+        assert!(json.contains("2048000"));
+    }
+
+    #[test]
+    fn test_health_response() {
+        let response = HealthResponse {
+            status: "ok".to_string(),
+            version: "0.1.0".to_string(),
+            gemini_api_available: true,
+        };
+
+        let json = serde_json::to_string(&response).unwrap();
+        assert!(json.contains("ok"));
+        assert!(json.contains("0.1.0"));
+        assert!(json.contains("true"));
+    }
+
+    #[test]
+    fn test_error_response_format() {
+        let error_response = ErrorResponse {
+            error: ErrorDetails {
+                message: "Invalid input".to_string(),
+                code: 400,
+            },
+        };
+
+        let json = serde_json::to_string(&error_response).unwrap();
+        let parsed: serde_json::Value = serde_json::from_str(&json).unwrap();
+
+        assert_eq!(parsed["error"]["message"], "Invalid input");
+        assert_eq!(parsed["error"]["code"], 400);
+    }
+
+    #[test]
+    fn test_gemini_request_serialization() {
+        let request = GeminiGenerateRequest {
+            contents: vec![GeminiContent {
+                parts: vec![
+                    GeminiPart::Text {
+                        text: "Generate a hat image".to_string(),
+                    },
+                    GeminiPart::InlineData {
+                        inline_data: GeminiInlineData {
+                            mime_type: "image/jpeg".to_string(),
+                            data: "base64data".to_string(),
+                        },
+                    },
+                ],
+            }],
+            generation_config: GeminiGenerationConfig {
+                temperature: 0.4,
+                top_k: 32,
+                top_p: 1.0,
+                max_output_tokens: 1024,
+                response_modalities: Some(vec!["IMAGE".to_string()]),
+            },
+        };
+
+        let json = serde_json::to_string(&request).unwrap();
+        let parsed: serde_json::Value = serde_json::from_str(&json).unwrap();
+
+        assert!(parsed["contents"].is_array());
+        assert_eq!(parsed["generationConfig"]["temperature"], 0.4);
+        assert_eq!(parsed["generationConfig"]["topK"], 32);
+        assert_eq!(parsed["generationConfig"]["topP"], 1.0);
+        assert_eq!(parsed["generationConfig"]["maxOutputTokens"], 1024);
+    }
+
+    #[test]
+    fn test_gemini_response_deserialization() {
+        let json = json!({
+            "candidates": [
+                {
+                    "content": {
+                        "parts": [
+                            {
+                                "text": "Generated response"
+                            }
+                        ]
+                    },
+                    "finishReason": "STOP"
+                }
+            ]
+        });
+
+        let response: GeminiResponse = serde_json::from_value(json).unwrap();
+        assert_eq!(response.candidates.len(), 1);
+        assert_eq!(
+            response.candidates[0].finish_reason,
+            Some("STOP".to_string())
+        );
+        assert_eq!(response.candidates[0].content.parts.len(), 1);
+
+        if let GeminiPart::Text { text } = &response.candidates[0].content.parts[0] {
+            assert_eq!(text, "Generated response");
+        } else {
+            panic!("Expected text part");
+        }
+    }
+
+    #[test]
+    fn test_gemini_part_serialization() {
+        let text_part = GeminiPart::Text {
+            text: "Hello world".to_string(),
+        };
+        let json = serde_json::to_string(&text_part).unwrap();
+        let parsed: serde_json::Value = serde_json::from_str(&json).unwrap();
+        assert_eq!(parsed["text"], "Hello world");
+
+        let inline_data_part = GeminiPart::InlineData {
+            inline_data: GeminiInlineData {
+                mime_type: "image/png".to_string(),
+                data: "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==".to_string(),
+            },
+        };
+        let json = serde_json::to_string(&inline_data_part).unwrap();
+        let parsed: serde_json::Value = serde_json::from_str(&json).unwrap();
+        assert_eq!(parsed["inlineData"]["mimeType"], "image/png");
+    }
+
+    #[test]
+    fn test_category_info_completeness() {
+        // Ensure CategoryInfo can be created for all categories
+        for category in ItemCategory::all() {
+            let info = CategoryInfo {
+                id: category.clone(),
+                name: category.display_name().to_string(),
+                count: 0,
+            };
+
+            assert_eq!(info.id, category);
+            assert_eq!(info.name, category.display_name());
+        }
+    }
+
+    #[test]
+    fn test_item_info_url_format() {
+        let item_info = ItemInfo {
+            id: Uuid::new_v4(),
+            filename: "test.jpg".to_string(),
+            hash: "abc123".to_string(),
+            dimensions: (800, 600),
+            created_at: "2023-01-01T00:00:00Z".to_string(),
+            prompt: Some("Test item".to_string()),
+            url: "http://localhost:3000/api/images/items/hats/abc123.jpg".to_string(),
+        };
+
+        assert!(item_info.url.contains("/api/images/items/"));
+        assert!(item_info.url.ends_with(".jpg"));
+        assert!(item_info.url.contains(&item_info.hash));
+    }
+
+    #[test]
+    fn test_boundary_conditions() {
+        // Test empty strings
+        let empty_category = ItemCategory::parse("");
+        assert_eq!(empty_category, None);
+
+        // Test very long strings
+        let long_string = "a".repeat(1000);
+        let long_category = ItemCategory::parse(&long_string);
+        assert_eq!(long_category, None);
+
+        // Test special characters
+        let special_chars = "hat!@#$%";
+        let special_category = ItemCategory::parse(special_chars);
+        assert_eq!(special_category, None);
+    }
+
+    #[test]
+    fn test_category_consistency() {
+        // Ensure all categories have consistent naming
+        for category in ItemCategory::all() {
+            let display_name = category.display_name();
+            let dir_name = category.dir_name();
+
+            assert!(
+                !display_name.is_empty(),
+                "Display name should not be empty for {:?}",
+                category
+            );
+            assert!(
+                !dir_name.is_empty(),
+                "Directory name should not be empty for {:?}",
+                category
+            );
+            assert!(
+                dir_name.chars().all(|c| c.is_ascii_lowercase() || c == '_'),
+                "Directory name should be lowercase ASCII for {:?}: {}",
+                category,
+                dir_name
+            );
+        }
     }
 }

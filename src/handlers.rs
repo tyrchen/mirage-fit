@@ -12,6 +12,7 @@ use crate::{
         HealthResponse, ItemCategory, ItemInfo, ItemsResponse, OutputInfo, OutputsResponse,
         RemixRequest, RemixResponse, UploadResponse,
     },
+    validation::validate_upload,
     Error, Result,
 };
 use axum::{
@@ -212,6 +213,9 @@ pub async fn upload_photo(
         return Err(Error::invalid_request("Empty image file"));
     }
 
+    // Validate the uploaded file
+    validate_upload(&data, filename.as_deref())?;
+
     // Save the uploaded image
     let metadata = state.file_manager.save_input_image(&data, filename).await?;
 
@@ -353,6 +357,19 @@ pub async fn serve_image(
     State(state): State<Arc<AppState>>,
 ) -> Result<Response> {
     debug!("Image requested: {} / {}", image_type, path);
+
+    // Sanitize path to prevent traversal attacks
+    if path.contains("..") || path.contains("//") || path.starts_with('/') {
+        return Err(Error::not_found("Invalid path"));
+    }
+
+    // Validate path contains only allowed characters
+    if !path
+        .chars()
+        .all(|c| c.is_alphanumeric() || c == '/' || c == '.' || c == '-' || c == '_')
+    {
+        return Err(Error::not_found("Invalid path characters"));
+    }
 
     let img_type = match image_type.as_str() {
         "input" => ImageType::Input,

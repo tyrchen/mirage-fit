@@ -10,7 +10,7 @@ import ImageSelectionLayout from './components/ImageSelectionLayout';
 import ErrorBoundary from './components/ErrorBoundary';
 import LoadingSpinner from './components/ui/LoadingSpinner';
 
-import { ItemCategory } from './types/api';
+// import { ItemCategory } from './types/api'; // Commented out - not used in this file
 
 // Create a client
 const queryClient = new QueryClient({

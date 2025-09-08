@@ -140,9 +140,14 @@ impl GeminiClient {
 
     /// Send a generation request to Gemini API and extract image data
     async fn generate_image(&self, request: GeminiGenerateRequest) -> Result<Vec<u8>> {
-        let url = self.config.gemini_generate_url();
+        // Append API key as query parameter (Gemini API requirement)
+        let url = format!(
+            "{}?key={}",
+            self.config.gemini_generate_url(),
+            self.config.gemini.api_key
+        );
 
-        debug!("Sending request to Gemini API: {}", url);
+        debug!("Sending request to Gemini API");
 
         let response = self
             .client

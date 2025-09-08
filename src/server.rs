@@ -11,6 +11,7 @@ use crate::{
         generate_category_item, generate_remix, get_categories, get_category_items, get_outputs,
         health_check, not_found, serve_image, upload_photo, AppState,
     },
+    static_files::serve_static,
     Result,
 };
 use axum::{
@@ -64,11 +65,8 @@ pub async fn create_app(config: Config, file_manager: FileManager) -> Result<Rou
     let app = Router::new()
         // Mount API routes
         .nest("/api", api_routes)
-        // Serve documentation/info page at root
-        .route("/", get(serve_root))
-        .route("/docs", get(serve_docs))
-        // Global fallback
-        .fallback(not_found)
+        // Serve static files (UI) for all other routes
+        .fallback(serve_static)
         // Add middleware layers
         .layer(DefaultBodyLimit::max(
             config.server.max_request_size as usize,
@@ -130,11 +128,13 @@ fn create_cors_layer(config: &Config) -> CorsLayer {
 }
 
 /// Serve root documentation page
+#[allow(unused)]
 async fn serve_root() -> Html<&'static str> {
     Html(include_str!("../docs/index.html"))
 }
 
 /// Serve API documentation
+#[allow(unused)]
 async fn serve_docs() -> Html<&'static str> {
     Html(
         r#"

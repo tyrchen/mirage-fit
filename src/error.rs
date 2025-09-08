@@ -193,6 +193,9 @@ impl IntoResponse for Error {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use axum::response::IntoResponse;
+    use serde_json::Value;
+    use std::error::Error as StdError;
 
     #[test]
     fn test_error_creation() {
@@ -202,6 +205,34 @@ mod tests {
             config_error.status_code(),
             StatusCode::INTERNAL_SERVER_ERROR
         );
+    }
+
+    #[test]
+    fn test_all_error_constructors() {
+        // Test all error constructor methods
+        let config_err = Error::config("Config issue");
+        assert!(matches!(config_err, Error::Config { .. }));
+
+        let fs_err = Error::file_system("File system issue");
+        assert!(matches!(fs_err, Error::FileSystem { .. }));
+
+        let gemini_err = Error::gemini_api("API issue", Some(400));
+        assert!(matches!(gemini_err, Error::GeminiApi { .. }));
+
+        let invalid_req_err = Error::invalid_request("Bad request");
+        assert!(matches!(invalid_req_err, Error::InvalidRequest { .. }));
+
+        let not_found_err = Error::not_found("resource");
+        assert!(matches!(not_found_err, Error::NotFound { .. }));
+
+        let invalid_img_err = Error::invalid_image("Bad image");
+        assert!(matches!(invalid_img_err, Error::InvalidImage { .. }));
+
+        let rate_limit_err = Error::rate_limit("Too fast");
+        assert!(matches!(rate_limit_err, Error::RateLimit { .. }));
+
+        let internal_err = Error::internal("Something went wrong");
+        assert!(matches!(internal_err, Error::Internal { .. }));
     }
 
     #[test]
@@ -218,6 +249,40 @@ mod tests {
             Error::rate_limit("too many requests").status_code(),
             StatusCode::TOO_MANY_REQUESTS
         );
+        assert_eq!(
+            Error::invalid_image("corrupt image").status_code(),
+            StatusCode::BAD_REQUEST
+        );
+        assert_eq!(
+            Error::config("missing key").status_code(),
+            StatusCode::INTERNAL_SERVER_ERROR
+        );
+        assert_eq!(
+            Error::file_system("disk full").status_code(),
+            StatusCode::INTERNAL_SERVER_ERROR
+        );
+        assert_eq!(
+            Error::internal("panic").status_code(),
+            StatusCode::INTERNAL_SERVER_ERROR
+        );
+
+        // Test Gemini API error with status code
+        assert_eq!(
+            Error::gemini_api("Bad request", Some(400)).status_code(),
+            StatusCode::BAD_REQUEST
+        );
+
+        // Test Gemini API error without status code
+        assert_eq!(
+            Error::gemini_api("Unknown error", None).status_code(),
+            StatusCode::INTERNAL_SERVER_ERROR
+        );
+
+        // Test Gemini API error with invalid status code
+        assert_eq!(
+            Error::gemini_api("Invalid status", Some(500)).status_code(),
+            StatusCode::INTERNAL_SERVER_ERROR
+        );
     }
 
     #[test]
@@ -225,7 +290,177 @@ mod tests {
         let error = Error::invalid_request("Invalid file format");
         assert_eq!(error.user_message(), "Invalid file format");
 
+        let error = Error::not_found("avatar.jpg");
+        assert_eq!(error.user_message(), "Resource not found: avatar.jpg");
+
+        let error = Error::invalid_image("Corrupted JPEG");
+        assert_eq!(error.user_message(), "Invalid image: Corrupted JPEG");
+
+        let error = Error::rate_limit("API quota exceeded");
+        assert_eq!(
+            error.user_message(),
+            "Rate limit exceeded: API quota exceeded"
+        );
+
+        let error = Error::gemini_api("Service unavailable", Some(503));
+        assert_eq!(
+            error.user_message(),
+            "AI service error: Service unavailable"
+        );
+
         let error = Error::internal("Database connection failed");
         assert_eq!(error.user_message(), "Internal server error occurred");
+
+        let error = Error::config("Missing API key");
+        assert_eq!(error.user_message(), "Internal server error occurred");
+
+        let error = Error::file_system("Disk full");
+        assert_eq!(error.user_message(), "Internal server error occurred");
+    }
+
+    #[test]
+    fn test_error_display() {
+        let error = Error::config("API key not set");
+        assert_eq!(error.to_string(), "Configuration error: API key not set");
+
+        let error = Error::gemini_api("Rate limited", Some(429));
+        assert_eq!(
+            error.to_string(),
+            "Gemini API error: Rate limited, status: Some(429)"
+        );
+
+        let error = Error::not_found("image.jpg");
+        assert_eq!(error.to_string(), "Resource not found: image.jpg");
+    }
+
+    #[test]
+    fn test_from_conversions() {
+        // Test automatic conversions from common error types
+        let io_error = std::io::Error::new(std::io::ErrorKind::NotFound, "File not found");
+        let error: Error = io_error.into();
+        assert!(matches!(error, Error::Io(_)));
+
+        let json_error = serde_json::from_str::<Value>("invalid json").unwrap_err();
+        let error: Error = json_error.into();
+        assert!(matches!(error, Error::Json(_)));
+
+        let uuid_error = uuid::Uuid::parse_str("invalid-uuid").unwrap_err();
+        let error: Error = uuid_error.into();
+        assert!(matches!(error, Error::Uuid(_)));
+
+        let anyhow_error = anyhow::anyhow!("Custom error");
+        let error: Error = anyhow_error.into();
+        assert!(matches!(error, Error::Anyhow(_)));
+    }
+
+    #[tokio::test]
+    async fn test_into_response() {
+        let error = Error::invalid_request("Bad input data");
+        let response = error.into_response();
+
+        assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+
+        // Extract and verify response body
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX).await.unwrap();
+        let body_str = String::from_utf8(bytes.to_vec()).unwrap();
+
+        // Parse JSON response
+        let json: Value = serde_json::from_str(&body_str).unwrap();
+        assert_eq!(json["error"]["message"], "Bad input data");
+        assert_eq!(json["error"]["code"], 400);
+
+        // Check content type header
+        assert_eq!(
+            parts.headers.get("content-type").unwrap(),
+            "application/json"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_error_response_formats() {
+        let test_cases = vec![
+            (
+                Error::invalid_request("Invalid format"),
+                StatusCode::BAD_REQUEST,
+            ),
+            (Error::not_found("user"), StatusCode::NOT_FOUND),
+            (
+                Error::rate_limit("Too many requests"),
+                StatusCode::TOO_MANY_REQUESTS,
+            ),
+            (
+                Error::internal("Server error"),
+                StatusCode::INTERNAL_SERVER_ERROR,
+            ),
+        ];
+
+        for (error, expected_status) in test_cases {
+            let response = error.into_response();
+            assert_eq!(response.status(), expected_status);
+
+            // Verify response contains JSON error format
+            let (_, body) = response.into_parts();
+            let bytes = axum::body::to_bytes(body, usize::MAX).await.unwrap();
+            let body_str = String::from_utf8(bytes.to_vec()).unwrap();
+            let json: Value = serde_json::from_str(&body_str).unwrap();
+
+            assert!(json.get("error").is_some());
+            assert!(json["error"].get("message").is_some());
+            assert!(json["error"].get("code").is_some());
+            assert_eq!(json["error"]["code"], expected_status.as_u16());
+        }
+    }
+
+    #[test]
+    fn test_error_chaining() {
+        // Test that error source information is preserved
+        let io_error = std::io::Error::new(std::io::ErrorKind::PermissionDenied, "Access denied");
+        let error: Error = io_error.into();
+
+        assert!(error.source().is_some());
+        assert_eq!(error.to_string(), "IO error: Access denied");
+    }
+
+    #[test]
+    fn test_error_debug() {
+        let error = Error::config("Missing API key");
+        let debug_str = format!("{:?}", error);
+        assert!(debug_str.contains("Config"));
+        assert!(debug_str.contains("Missing API key"));
+    }
+
+    #[test]
+    fn test_result_type_alias() {
+        fn test_function() -> Result<i32> {
+            Ok(42)
+        }
+
+        fn test_function_error() -> Result<i32> {
+            Err(Error::invalid_request("Test error"))
+        }
+
+        assert_eq!(test_function().unwrap(), 42);
+        assert!(test_function_error().is_err());
+    }
+
+    #[test]
+    fn test_error_message_content_safety() {
+        // Ensure sensitive information isn't leaked in user messages
+        let sensitive_error = Error::internal("Database password: secret123");
+        assert_eq!(
+            sensitive_error.user_message(),
+            "Internal server error occurred"
+        );
+
+        let config_error = Error::config("API key: sk-abcd1234");
+        assert_eq!(
+            config_error.user_message(),
+            "Internal server error occurred"
+        );
+
+        // But user-facing errors should preserve their messages
+        let user_error = Error::invalid_request("Email is required");
+        assert_eq!(user_error.user_message(), "Email is required");
     }
 }

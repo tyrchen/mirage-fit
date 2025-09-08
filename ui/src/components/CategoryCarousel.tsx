@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Plus, Upload, Check } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Upload, Check } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAppStore } from '../store/appStore';
 import { api } from '../services/api';
@@ -16,7 +16,7 @@ interface CategoryCarouselProps {
 const CategoryCarousel: React.FC<CategoryCarouselProps> = ({
   category,
   label,
-  categoryData,
+  // categoryData, // Not used currently
 }) => {
   const {
     categoryItems,
@@ -95,7 +95,7 @@ const CategoryCarousel: React.FC<CategoryCarouselProps> = ({
     toast.success(`Selected ${label}`);
   };
 
-  const currentItem = items[currentIndex];
+  // const currentItem = items[currentIndex]; // Not used currently
 
   return (
     <motion.div

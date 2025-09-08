@@ -1,12 +1,12 @@
 [package]
 name = "mirage-fit"
 version = "0.1.0"
-authors = ["Your Name <YourName@yourdomain.com>"]
+authors = ["Your Name <tyr.chen@gmail.com>"]
 edition = "2021"
 license = "MIT"
 documentation = "https://docs.rs/mirage-fit"
-repository = "https://github.com/TODO"
-homepage = "https://github.com/TODO"
+repository = "https://github.com/tyrchen/mirage-fit"
+homepage = "https://github.com/tyrchen/mirage-fit"
 description = "Image remix application using Gemini AI for fashion and style transformation"
 readme = "README.md"
 categories = ["multimedia", "web-programming"]
@@ -18,7 +18,12 @@ path = "src/main.rs"
 
 [dependencies]
 # Core async runtime and utilities
-tokio = { version = "1.47.1", features = ["rt", "rt-multi-thread", "macros", "fs"] }
+tokio = { version = "1.47.1", features = [
+  "rt",
+  "rt-multi-thread",
+  "macros",
+  "fs",
+] }
 
 # Web server framework
 axum = { version = "0.8", features = ["multipart", "tracing"] }
@@ -30,22 +35,22 @@ reqwest = { version = "0.12", features = ["json", "multipart", "stream"] }
 
 # Serialization and JSON
 serde = { version = "1.0.219", features = ["derive"] }
-serde_json = "1.0.142"
+serde_json = "1.0.143"
 
 # Error handling
-anyhow = "1.0.98"
-thiserror = "2.0.12"
+anyhow = "1.0.99"
+thiserror = "2.0.16"
 
 # Static file embedding
-rust-embed = "8.5"
+rust-embed = { version = "8.7", features = ["include-exclude"] }
 
 # Cryptography and hashing
-blake3 = "1.5"
+blake3 = "1.8"
 base64 = "0.22"
 
 # File system operations
-dirs = "5.0"
-uuid = { version = "1.8", features = ["v4", "serde"] }
+dirs = "6.0"
+uuid = { version = "1.18", features = ["v4", "serde"] }
 
 # Image processing
 image = { version = "0.25", features = ["jpeg", "png", "webp"] }
@@ -62,4 +67,4 @@ mime = "0.3"
 mime_guess = "2.0"
 
 [dev-dependencies]
-tempfile = "3.10"
+tempfile = "3.21"

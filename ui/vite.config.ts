@@ -33,7 +33,27 @@ export default defineConfig({
   test: {
     globals: true, // Use Vitest globals (describe, it, expect, etc.)
     environment: 'jsdom', // Simulate DOM environment
-    setupFiles: [], // Optional: Add setup files if needed
+    setupFiles: ['./src/test/setup.ts'], // Test setup files
+    include: ['src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'], // Test file patterns
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'html'],
+      exclude: [
+        'node_modules/',
+        'src/test/',
+        '**/*.d.ts',
+        '**/*.config.*',
+        'dist/',
+      ],
+      thresholds: {
+        global: {
+          branches: 80,
+          functions: 80,
+          lines: 80,
+          statements: 80
+        }
+      }
+    },
     // reporters: ['verbose'] // Optional: Use verbose reporter
   },
 } as VitestConfigExport) // Cast the config object

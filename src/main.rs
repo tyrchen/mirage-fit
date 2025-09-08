@@ -14,14 +14,6 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilte
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
-    /// Port to bind the server to
-    #[arg(short, long, default_value = "3000", env = "MIRAGE_FIT_PORT")]
-    port: u16,
-
-    /// Host to bind the server to
-    #[arg(long, default_value = "127.0.0.1", env = "MIRAGE_FIT_HOST")]
-    host: String,
-
     /// Gemini API key (can also be set via GEMINI_API_KEY environment variable)
     #[arg(long, env = "GEMINI_API_KEY")]
     gemini_api_key: Option<String>,
@@ -57,13 +49,16 @@ async fn main() -> Result<()> {
     }
 
     // Create the application
-    let app = create_app(config, file_manager).await?;
+    let app = create_app(config.clone(), file_manager).await?;
 
-    // Bind to socket address
-    let addr: SocketAddr = format!("{}:{}", args.host, args.port).parse()?;
+    // Use config for server address
+    let addr: SocketAddr = config.server_addr().parse()?;
 
-    info!("Server listening on http://{}", addr);
-    info!("API documentation available at http://{}/docs", addr);
+    info!("Server listening on {}", config.server.public_url);
+    info!(
+        "API documentation available at {}/docs",
+        config.server.public_url
+    );
 
     // Start the server
     let listener = tokio::net::TcpListener::bind(addr).await?;

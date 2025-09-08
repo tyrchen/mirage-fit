@@ -19,17 +19,17 @@
 //! ~/.mirage-fit/
 //! ├── input/           # User uploaded photos
 //! ├── items/           # Generated item images by category
-//! │   ├── 帽子/
-//! │   ├── 眼镜/
-//! │   ├── 鞋子/
-//! │   ├── 上衣/
-//! │   ├── 裤子_裙子/
-//! │   ├── 袜子/
-//! │   ├── 手套/
-//! │   ├── 围巾/
-//! │   ├── 包包/
-//! │   ├── 饰品/
-//! │   └── 其他/
+//! │   ├── hats/
+//! │   ├── glasses/
+//! │   ├── shoes/
+//! │   ├── tops/
+//! │   ├── pants_skirts/
+//! │   ├── socks/
+//! │   ├── gloves/
+//! │   ├── scarves/
+//! │   ├── bags/
+//! │   ├── accessories/
+//! │   └── others/
 //! └── output/          # Generated remix images (Blake3 hash names)
 //! ```
 
@@ -40,6 +40,8 @@ pub mod gemini;
 pub mod handlers;
 pub mod models;
 pub mod server;
+pub mod static_files;
+pub mod validation;
 
 pub use error::{Error, Result};
 
