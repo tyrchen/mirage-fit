@@ -1,16 +1,16 @@
 [package]
 name = "mirage-fit"
 version = "0.1.0"
-authors = ["Your Name <tyr.chen@gmail.com>"]
+authors = ["Tyr Chen <tyr.chen@gmail.com>"]
 edition = "2021"
 license = "MIT"
 documentation = "https://docs.rs/mirage-fit"
 repository = "https://github.com/tyrchen/mirage-fit"
 homepage = "https://github.com/tyrchen/mirage-fit"
-description = "Image remix application using Gemini AI for fashion and style transformation"
+description = "AI-powered fashion remix application using Google Gemini for virtual try-on experiences"
 readme = "README.md"
-categories = ["multimedia", "web-programming"]
-keywords = ["ai", "image", "remix", "fashion", "gemini"]
+categories = ["multimedia", "web-programming", "computer-vision"]
+keywords = ["ai", "fashion", "gemini", "virtual-try-on", "image-generation"]
 
 [[bin]]
 name = "mirage-fit"
@@ -67,4 +67,4 @@ mime = "0.3"
 mime_guess = "2.0"
 
 [dev-dependencies]
-tempfile = "3.21"
+tempfile = "3.22"

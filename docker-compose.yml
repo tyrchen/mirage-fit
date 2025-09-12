@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  mirage-fit:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - GEMINI_API_URL=${GEMINI_API_URL:-https://generativelanguage.googleapis.com/v1beta/models}
+      - PORT=3000
+      - DATA_DIR=/app/data
+      - RUST_LOG=info
+    volumes:
+      # Persist uploaded images and generated content
+      - mirage-data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  mirage-data:
+    driver: local
