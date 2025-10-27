@@ -19,6 +19,11 @@ use tokio::fs;
 use tracing::{debug, info, warn};
 use uuid::Uuid;
 
+/// T-shirt/top color variants for default item generation
+const TSHIRT_COLORS: &[&str] = &[
+    "white", "black", "red", "blue", "green", "yellow", "gray", "navy",
+];
+
 /// File manager for handling all file system operations
 #[derive(Debug, Clone)]
 pub struct FileManager {
@@ -405,73 +410,144 @@ impl FileManager {
         Ok(stats)
     }
 
-    /// Generate default item images for all categories (2 per category) concurrently
+    /// Generate default item images for all categories concurrently
+    /// - For Top category: generates 1 item per color variant (8 colors)
+    /// - For other categories: generates 2 items per category
     pub async fn generate_default_items(&self, config: &Config) -> Result<()> {
         info!("Generating default item images for all categories concurrently");
 
         let gemini_client = GeminiClient::new(config.clone())?;
         let mut tasks = Vec::new();
+        let mut task_counter: u64 = 0;
 
         // Create concurrent tasks for each category that needs items
         for category in ItemCategory::all() {
-            // Check if category already has items
             let existing_items = self.list_category_items(&category).await?;
-            if existing_items.len() >= 2 {
-                debug!(
-                    "Category {} already has {} items, skipping",
+
+            // Special handling for Top category - generate color variants
+            if category == ItemCategory::Top {
+                info!(
+                    "Category {} has {} items, generating color variants",
                     category,
                     existing_items.len()
                 );
-                continue;
-            }
 
-            let items_to_generate = 2 - existing_items.len();
-            info!(
-                "Generating {} default items for category: {}",
-                items_to_generate, category
-            );
+                // Generate one item per color
+                for color in TSHIRT_COLORS {
+                    let client = gemini_client.clone();
+                    let file_manager = self.clone();
+                    let cat = category.clone();
+                    let color_str = color.to_string();
+                    let counter = task_counter;
 
-            // Create tasks for each item in this category
-            for i in 0..items_to_generate {
-                let client = gemini_client.clone();
-                let file_manager = self.clone();
-                let cat = category.clone();
-                let existing_count = existing_items.len();
+                    let task = tokio::spawn(async move {
+                        // Add staggered delay to reduce rate limiting
+                        let delay_ms = counter * 200;
+                        tokio::time::sleep(tokio::time::Duration::from_millis(delay_ms)).await;
 
-                let task = tokio::spawn(async move {
-                    // Add staggered delay to reduce rate limiting
-                    let delay_ms = (i as u64 + existing_count as u64) * 200;
-                    tokio::time::sleep(tokio::time::Duration::from_millis(delay_ms)).await;
-
-                    match client.generate_item(&cat, None, None, None).await {
-                        Ok(image_data) => {
-                            let prompt = format!(
-                                "Default {} item #{}",
-                                cat.display_name(),
-                                existing_count + i + 1
-                            );
-                            match file_manager
-                                .save_item_image(&image_data, &cat, Some(prompt))
-                                .await
-                            {
-                                Ok(metadata) => {
-                                    info!("Generated default item for {}: {}", cat, metadata.id);
-                                    Ok((cat.clone(), metadata.id))
-                                }
-                                Err(e) => {
-                                    warn!("Failed to save default item for {}: {}", cat, e);
-                                    Err(e)
+                        match client
+                            .generate_item(&cat, None, None, Some(&color_str))
+                            .await
+                        {
+                            Ok(image_data) => {
+                                let prompt = format!("{} {}", color_str, cat.display_name());
+                                match file_manager
+                                    .save_item_image(&image_data, &cat, Some(prompt))
+                                    .await
+                                {
+                                    Ok(metadata) => {
+                                        info!(
+                                            "Generated {} {} for {}: {}",
+                                            color_str, cat, cat, metadata.id
+                                        );
+                                        Ok((cat.clone(), metadata.id))
+                                    }
+                                    Err(e) => {
+                                        warn!(
+                                            "Failed to save {} {} for {}: {}",
+                                            color_str, cat, cat, e
+                                        );
+                                        Err(e)
+                                    }
                                 }
                             }
+                            Err(e) => {
+                                warn!(
+                                    "Failed to generate {} {} for {}: {}",
+                                    color_str, cat, cat, e
+                                );
+                                Err(e)
+                            }
                         }
-                        Err(e) => {
-                            warn!("Failed to generate default item for {}: {}", cat, e);
-                            Err(e)
-                        }
-                    }
-                });
+                    });
 
-                tasks.push(task);
+                    tasks.push(task);
+                    task_counter += 1;
+                }
+            } else {
+                // Standard handling for other categories - generate 2 items
+                if existing_items.len() >= 2 {
+                    debug!(
+                        "Category {} already has {} items, skipping",
+                        category,
+                        existing_items.len()
+                    );
+                    continue;
+                }
+
+                let items_to_generate = 2 - existing_items.len();
+                info!(
+                    "Generating {} default items for category: {}",
+                    items_to_generate, category
+                );
+
+                // Create tasks for each item in this category
+                for i in 0..items_to_generate {
+                    let client = gemini_client.clone();
+                    let file_manager = self.clone();
+                    let cat = category.clone();
+                    let existing_count = existing_items.len();
+                    let counter = task_counter;
+
+                    let task = tokio::spawn(async move {
+                        // Add staggered delay to reduce rate limiting
+                        let delay_ms = counter * 200;
+                        tokio::time::sleep(tokio::time::Duration::from_millis(delay_ms)).await;
+
+                        match client.generate_item(&cat, None, None, None).await {
+                            Ok(image_data) => {
+                                let prompt = format!(
+                                    "Default {} item #{}",
+                                    cat.display_name(),
+                                    existing_count + i + 1
+                                );
+                                match file_manager
+                                    .save_item_image(&image_data, &cat, Some(prompt))
+                                    .await
+                                {
+                                    Ok(metadata) => {
+                                        info!(
+                                            "Generated default item for {}: {}",
+                                            cat, metadata.id
+                                        );
+                                        Ok((cat.clone(), metadata.id))
+                                    }
+                                    Err(e) => {
+                                        warn!("Failed to save default item for {}: {}", cat, e);
+                                        Err(e)
+                                    }
+                                }
+                            }
+                            Err(e) => {
+                                warn!("Failed to generate default item for {}: {}", cat, e);
+                                Err(e)
+                            }
+                        }
+                    });
+
+                    tasks.push(task);
+                    task_counter += 1;
+                }
             }
         }
 
